@@ -4,7 +4,7 @@ import TarotCard from "./TarotCard";
 import { Arcano, arcanosMaiores } from "@/lib/tarotData";
 
 interface DeckProps {
-  onCardSelected: (arcano: Arcano, position: "passado" | "presente" | "futuro") => void;
+  onCardSelected: (arcano: Arcano, positionId: number) => void;
   selectedCount: number;
 }
 
@@ -23,32 +23,37 @@ const Deck = ({ onCardSelected, selectedCount }: DeckProps) => {
   }, []);
 
   const handleCardClick = (arcano: Arcano, index: number) => {
-    if (selectedCards.includes(index) || selectedCount >= 3) return;
+    if (selectedCards.includes(index) || selectedCount >= 9) return;
 
     setSelectedCards([...selectedCards, index]);
     
-    const position = 
-      selectedCount === 0 ? "passado" : 
-      selectedCount === 1 ? "presente" : 
-      "futuro";
+    // Position IDs from 1 to 9
+    const positionId = selectedCount + 1;
     
-    onCardSelected(arcano, position);
+    onCardSelected(arcano, positionId);
   };
 
   const getInstruction = () => {
-    switch (selectedCount) {
-      case 0:
-        return "Escolha sua primeira carta para revelar o Passado";
-      case 1:
-        return "Escolha sua segunda carta para revelar o Presente";
-      case 2:
-        return "Escolha sua terceira carta para revelar o Futuro";
-      default:
-        return "Sua leitura está completa!";
+    const instructions = [
+      "Carta 1: Evento Central do Passado",
+      "Carta 2: Emoções do Passado", 
+      "Carta 3: Influências Externas do Passado",
+      "Carta 4: Situação Atual",
+      "Carta 5: Seus Sentimentos Atuais",
+      "Carta 6: Ambiente Atual",
+      "Carta 7: Resultado Provável",
+      "Carta 8: Oportunidades e Desafios",
+      "Carta 9: Perspectiva de Longo Prazo"
+    ];
+    
+    if (selectedCount < 9) {
+      const rowTitle = selectedCount < 3 ? "Passado" : selectedCount < 6 ? "Presente" : "Futuro";
+      return `${instructions[selectedCount]} (${rowTitle})`;
     }
+    return "Sua leitura está completa!";
   };
 
-  if (selectedCount >= 3) return null;
+  if (selectedCount >= 9) return null;
 
   return (
     <div className="w-full">

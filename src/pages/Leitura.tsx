@@ -6,18 +6,14 @@ import AdSlot from "@/components/AdSlot";
 import { Arcano } from "@/lib/tarotData";
 
 const Leitura = () => {
-  const [passado, setPassado] = useState<Arcano | undefined>();
-  const [presente, setPresente] = useState<Arcano | undefined>();
-  const [futuro, setFuturo] = useState<Arcano | undefined>();
+  const [selectedCards, setSelectedCards] = useState<Map<number, Arcano>>(new Map());
   const [selectedCount, setSelectedCount] = useState(0);
 
-  const handleCardSelected = (arcano: Arcano, position: "passado" | "presente" | "futuro") => {
+  const handleCardSelected = (arcano: Arcano, positionId: number) => {
     setSelectedCount(prev => prev + 1);
     
     setTimeout(() => {
-      if (position === "passado") setPassado(arcano);
-      else if (position === "presente") setPresente(arcano);
-      else if (position === "futuro") setFuturo(arcano);
+      setSelectedCards(prev => new Map(prev).set(positionId, arcano));
     }, 600);
   };
 
@@ -63,10 +59,10 @@ const Leitura = () => {
           <main className="flex-1">
             <div className="space-y-12">
               {/* Results Section */}
-              <Resultado passado={passado} presente={presente} futuro={futuro} />
+              <Resultado selectedCards={selectedCards} />
 
               {/* Deck Section */}
-              {selectedCount < 3 && (
+              {selectedCount < 9 && (
                 <div className="pt-8 border-t border-border/30">
                   <Deck 
                     onCardSelected={handleCardSelected}
@@ -76,11 +72,11 @@ const Leitura = () => {
               )}
 
               {/* Bottom Ad (shown after reading is complete) */}
-              {selectedCount >= 3 && (
+              {selectedCount >= 9 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1.5 }}
+                  transition={{ delay: 2 }}
                   className="flex justify-center pt-8"
                 >
                   <AdSlot width="728px" height="90px" position="bottom" />

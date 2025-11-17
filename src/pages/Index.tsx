@@ -10,23 +10,23 @@ const Index = () => {
   const features = [
     {
       icon: <Sparkles className="w-8 h-8" />,
-      title: "Leitura Gratuita",
-      description: "Consulta completa de tarot sem nenhum custo"
+      title: "Leitura Completa Gratuita",
+      description: "9 cartas para uma análise profunda e detalhada"
     },
     {
       icon: <Eye className="w-8 h-8" />,
-      title: "Insights Profundos",
-      description: "Descubra o significado de cada carta selecionada"
+      title: "Método Profissional",
+      description: "Técnica expandida 3x3 usada por tarologistas experientes"
     },
     {
       icon: <Clock className="w-8 h-8" />,
-      title: "Passado, Presente e Futuro",
-      description: "Uma jornada completa através do tempo"
+      title: "Análise Temporal Completa",
+      description: "3 aspectos detalhados de cada período temporal"
     },
     {
       icon: <Zap className="w-8 h-8" />,
-      title: "Resultados Instantâneos",
-      description: "Sua leitura em apenas alguns cliques"
+      title: "Insights Múltiplos",
+      description: "Compreenda eventos, emoções, influências e perspectivas"
     }
   ];
 
@@ -104,7 +104,7 @@ const Index = () => {
             </h1>
             
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
-              Tarot Online Gratuito com Leitura de Três Cartas
+              Leitura Expandida de 9 Cartas - Método Profissional
             </p>
 
             <motion.div
@@ -113,13 +113,25 @@ const Index = () => {
               transition={{ delay: 0.3, duration: 0.8 }}
               className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 mb-12 max-w-2xl mx-auto"
             >
-              <p className="text-lg text-foreground leading-relaxed">
+              <p className="text-lg text-foreground leading-relaxed mb-4">
                 Conecte-se com a sabedoria ancestral do tarot através da 
-                <span className="text-primary font-semibold"> Leitura de Três Cartas</span>.
-                Descubra insights sobre seu <span className="text-primary font-semibold">passado</span>, 
-                compreenda seu <span className="text-accent font-semibold"> presente</span> e 
-                vislumbre seu <span className="text-secondary font-semibold"> futuro</span>.
+                <span className="text-primary font-semibold"> Leitura Expandida de 9 Cartas</span>.
+                Uma análise profunda e completa em três dimensões temporais:
               </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="text-center p-3 bg-primary/10 rounded-lg">
+                  <div className="font-bold text-primary mb-1">Passado</div>
+                  <div className="text-muted-foreground">3 cartas revelam eventos, emoções e influências</div>
+                </div>
+                <div className="text-center p-3 bg-accent/10 rounded-lg">
+                  <div className="font-bold text-accent mb-1">Presente</div>
+                  <div className="text-muted-foreground">3 cartas mostram situação, sentimentos e ambiente</div>
+                </div>
+                <div className="text-center p-3 bg-secondary/10 rounded-lg">
+                  <div className="font-bold text-secondary mb-1">Futuro</div>
+                  <div className="text-muted-foreground">3 cartas indicam resultados, desafios e perspectivas</div>
+                </div>
+              </div>
             </motion.div>
 
             <motion.div
@@ -194,7 +206,7 @@ const Index = () => {
               Como Funciona
             </h2>
             <p className="text-muted-foreground text-lg">
-              Três simples passos para sua leitura de tarot
+              Simples passos para sua leitura expandida de tarot
             </p>
           </motion.div>
 
@@ -203,17 +215,17 @@ const Index = () => {
               {
                 step: "1",
                 title: "Concentre-se em sua questão",
-                description: "Pense na área da sua vida sobre a qual deseja orientação"
+                description: "Pense na área da sua vida sobre a qual deseja orientação profunda"
               },
               {
                 step: "2",
-                title: "Escolha suas três cartas",
-                description: "Confie em sua intuição para selecionar as cartas que mais te atraem"
+                title: "Escolha suas nove cartas",
+                description: "Confie em sua intuição para selecionar cada carta sequencialmente"
               },
               {
                 step: "3",
-                title: "Descubra os significados",
-                description: "Revele as cartas e explore as mensagens do passado, presente e futuro"
+                title: "Explore a análise completa",
+                description: "Descubra 9 perspectivas diferentes: eventos, emoções, influências, situações, sentimentos, ambiente, resultados, desafios e conselhos"
               }
             ].map((item, index) => (
               <motion.div
