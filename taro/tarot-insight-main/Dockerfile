@@ -17,32 +17,19 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build the application
+# Build the Vite application
 RUN npm run build
 
-# Stage 3: Runner (production image)
-FROM node:20-alpine AS runner
-WORKDIR /app
+# Stage 3: Runner (production image with nginx)
+FROM nginx:alpine AS runner
 
-ENV NODE_ENV=production
+# Copy built assets to nginx
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Copy nginx configuration (optional, create if needed)
+# COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy necessary files
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# Expose port 80
+EXPOSE 80
 
-# Set correct permissions
-RUN chown -R nextjs:nodejs /app
-
-USER nextjs
-
-EXPOSE 3000
-
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-CMD ["node", "server.js"]
+CMD ["nginx", "-g", "daemon off;"]
