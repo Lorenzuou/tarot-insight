@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  taro:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taro-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Add your environment variables here
+      # - NEXT_PUBLIC_API_URL=https://api.example.com
+    # Uncomment if you need to persist data
+    # volumes:
+    #   - ./data:/app/data
+    networks:
+      - taro-network
+
+networks:
+  taro-network:
+    driver: bridge
