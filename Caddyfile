@@ -1,0 +1,8 @@
+tarom.com.br {
+    reverse_proxy taro-app:80
+    encode gzip
+}
+
+www.tarom.com.br {
+    redir https://tarom.com.br{uri} permanent
+}
