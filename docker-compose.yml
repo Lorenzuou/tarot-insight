@@ -1,23 +1,67 @@
 version: '3.8'
 
 services:
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy:alpine
+    container_name: nginx-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - conf:/etc/nginx/conf.d
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - certs:/etc/nginx/certs:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    labels:
+      - "com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy=true"
+    networks:
+      - taro-network
+
+  letsencrypt:
+    image: nginxproxy/acme-companion
+    container_name: nginx-letsencrypt
+    restart: unless-stopped
+    volumes:
+      - certs:/etc/nginx/certs:rw
+      - acme:/etc/acme.sh
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    environment:
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+      - DEFAULT_EMAIL=lorenzomsca@gmail.com
+    depends_on:
+      - nginx-proxy
+    networks:
+      - taro-network
+
   taro:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: taro-app
     restart: unless-stopped
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     environment:
       - NODE_ENV=production
-      # Add your environment variables here
-      # - NEXT_PUBLIC_API_URL=https://api.example.com
-    # Uncomment if you need to persist data
-    # volumes:
-    #   - ./data:/app/data
+      - VIRTUAL_HOST=tarom.com.br
+      - LETSENCRYPT_HOST=tarom.com.br
+      - LETSENCRYPT_EMAIL=lorenzomsca@gmail.com
+    depends_on:
+      - nginx-proxy
+      - letsencrypt
     networks:
       - taro-network
+
+volumes:
+  conf:
+  vhost:
+  html:
+  certs:
+  acme:
 
 networks:
   taro-network:
