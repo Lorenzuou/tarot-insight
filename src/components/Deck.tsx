@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import TarotCard from "./TarotCard";
 import { Arcano, arcanosMaiores } from "@/lib/tarotData";
+import { cn } from "@/lib/utils";
 
 interface DeckProps {
   onCardSelected: (arcano: Arcano, positionId: number) => void;
   selectedCount: number;
+  isLocked?: boolean;
 }
 
-const Deck = ({ onCardSelected, selectedCount }: DeckProps) => {
+const Deck = ({ onCardSelected, selectedCount, isLocked = false }: DeckProps) => {
   const [shuffledCards, setShuffledCards] = useState<Arcano[]>([]);
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
   const [isShuffling, setIsShuffling] = useState(true);
@@ -23,7 +25,7 @@ const Deck = ({ onCardSelected, selectedCount }: DeckProps) => {
   }, []);
 
   const handleCardClick = (arcano: Arcano, index: number) => {
-    if (selectedCards.includes(index) || selectedCount >= 9) return;
+    if (selectedCards.includes(index) || selectedCount >= 9 || isLocked) return;
 
     setSelectedCards([...selectedCards, index]);
     
@@ -35,20 +37,20 @@ const Deck = ({ onCardSelected, selectedCount }: DeckProps) => {
 
   const getInstruction = () => {
     const instructions = [
-      "Carta 1: Evento Central do Passado",
-      "Carta 2: Emoções do Passado", 
-      "Carta 3: Influências Externas do Passado",
-      "Carta 4: Situação Atual",
-      "Carta 5: Seus Sentimentos Atuais",
-      "Carta 6: Ambiente Atual",
-      "Carta 7: Resultado Provável",
-      "Carta 8: Oportunidades e Desafios",
-      "Carta 9: Perspectiva de Longo Prazo"
+      "Carta 1: O portal que abre o passado",
+      "Carta 2: Emoção que ainda ecoa",
+      "Carta 3: Voz externa que marcou",
+      "Carta 4: O espelho do agora",
+      "Carta 5: Correnteza emocional presente",
+      "Carta 6: Ventos e influências do momento",
+      "Carta 7: Rastro provável do futuro",
+      "Carta 8: Pontes e desafios pela frente",
+      "Carta 9: Farol de longo alcance"
     ];
     
     if (selectedCount < 9) {
       const rowTitle = selectedCount < 3 ? "Passado" : selectedCount < 6 ? "Presente" : "Futuro";
-      return `${instructions[selectedCount]} (${rowTitle})`;
+      return `${instructions[selectedCount]} · ${rowTitle}`;
     }
     return "Sua leitura está completa!";
   };
@@ -66,11 +68,21 @@ const Deck = ({ onCardSelected, selectedCount }: DeckProps) => {
           {getInstruction()}
         </h2>
         <p className="text-muted-foreground">
-          Confie em sua intuição e escolha a carta que mais te atrai
+          Permita que a carta que chamar seu coração revele a próxima mensagem.
         </p>
+        {isLocked && (
+          <p className="mt-3 text-sm text-primary">
+            Complete o ritual de reflexão antes de continuar a escolha das cartas.
+          </p>
+        )}
       </motion.div>
 
-      <div className="relative flex flex-wrap justify-center gap-4 md:gap-6 max-w-6xl mx-auto">
+      <div
+        className={cn(
+          "relative flex flex-wrap justify-center gap-4 md:gap-6 max-w-6xl mx-auto transition-opacity",
+          isLocked && "pointer-events-none opacity-60",
+        )}
+      >
         <AnimatePresence>
           {shuffledCards.map((arcano, index) => {
             const isSelected = selectedCards.includes(index);

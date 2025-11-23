@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import AdSlot from "@/components/AdSlot";
-import { Sparkles, Eye, Clock, Zap } from "lucide-react";
+import { Sparkles, Feather, Brain, MoonStar } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -10,23 +10,23 @@ const Index = () => {
   const features = [
     {
       icon: <Sparkles className="w-8 h-8" />,
-      title: "Leitura Completa Gratuita",
-      description: "9 cartas para uma análise profunda e detalhada"
+      title: "Rito guiado em 3 portais",
+  description: "Passado, presente e futuro se desvelam em sequência sagrada, com tempo para respirar."
     },
     {
-      icon: <Eye className="w-8 h-8" />,
-      title: "Método Profissional",
-      description: "Técnica expandida 3x3 usada por tarologistas experientes"
+      icon: <Feather className="w-8 h-8" />,
+      title: "Reflexões que moldam a leitura",
+  description: "Suas palavras tornam cada carta mais íntima, revelando sutilezas que só você sente."
     },
     {
-      icon: <Clock className="w-8 h-8" />,
-      title: "Análise Temporal Completa",
-      description: "3 aspectos detalhados de cada período temporal"
+      icon: <Brain className="w-8 h-8" />,
+      title: "Interpretação com Gemini",
+  description: "Um insight tecido pela IA do Google, unindo simbolismo ancestral e sua voz interior."
     },
     {
-      icon: <Zap className="w-8 h-8" />,
-      title: "Insights Múltiplos",
-      description: "Compreenda eventos, emoções, influências e perspectivas"
+      icon: <MoonStar className="w-8 h-8" />,
+      title: "Atmosfera imersiva",
+  description: "Visual, textos e ritmos que acolhem, convidando a uma experiência mística e sensorial."
     }
   ];
 
@@ -71,7 +71,7 @@ const Index = () => {
               animate={{ opacity: 1, x: 0 }}
             >
               <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                ✨ Tarot Místico
+                ✨ Tarot Insight
               </h1>
             </motion.div>
             
@@ -100,11 +100,11 @@ const Index = () => {
             </div>
 
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
-              Descubra seu Futuro
+              Escute o que o tarot sussurra
             </h1>
             
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
-              Leitura Expandida de 9 Cartas - Método Profissional
+              Um ritual digital para quem deseja respostas com poesia, clareza e um toque de magia.
             </p>
 
             <motion.div
@@ -114,22 +114,21 @@ const Index = () => {
               className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 mb-12 max-w-2xl mx-auto"
             >
               <p className="text-lg text-foreground leading-relaxed mb-4">
-                Conecte-se com a sabedoria ancestral do tarot através da 
-                <span className="text-primary font-semibold"> Leitura Expandida de 9 Cartas</span>.
-                Uma análise profunda e completa em três dimensões temporais:
+                Declare sua intenção, respire fundo e permita que as cartas caminhem ao seu lado. Cada etapa honra um
+                tempo da sua história e transforma a pergunta em experiência sensorial.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="text-center p-3 bg-primary/10 rounded-lg">
                   <div className="font-bold text-primary mb-1">Passado</div>
-                  <div className="text-muted-foreground">3 cartas revelam eventos, emoções e influências</div>
+                  <div className="text-muted-foreground">Revela ecos que ainda vibram, pedindo reconhecimento e cura.</div>
                 </div>
                 <div className="text-center p-3 bg-accent/10 rounded-lg">
                   <div className="font-bold text-accent mb-1">Presente</div>
-                  <div className="text-muted-foreground">3 cartas mostram situação, sentimentos e ambiente</div>
+                  <div className="text-muted-foreground">Ilumina as forças, emoções e vozes que habitam o agora.</div>
                 </div>
                 <div className="text-center p-3 bg-secondary/10 rounded-lg">
                   <div className="font-bold text-secondary mb-1">Futuro</div>
-                  <div className="text-muted-foreground">3 cartas indicam resultados, desafios e perspectivas</div>
+                  <div className="text-muted-foreground">Tece possibilidades, desafios e conselhos para o amanhã.</div>
                 </div>
               </div>
             </motion.div>
@@ -144,7 +143,7 @@ const Index = () => {
                 size="lg"
                 className="text-lg px-12 py-6 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-lg"
               >
-                Iniciar Minha Leitura ✨
+                Abrir o círculo agora ✨
               </Button>
             </motion.div>
           </motion.div>
@@ -161,10 +160,10 @@ const Index = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-              Por Que Escolher Nossa Leitura?
+              O que torna este oráculo diferente?
             </h2>
             <p className="text-muted-foreground text-lg">
-              Uma experiência de tarot moderna e intuitiva
+              Tradição, escrita sensível e tecnologia entrelaçadas para um rito inesquecível.
             </p>
           </motion.div>
 
@@ -203,10 +202,10 @@ const Index = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-              Como Funciona
+              Um ritual em três atos
             </h2>
             <p className="text-muted-foreground text-lg">
-              Simples passos para sua leitura expandida de tarot
+              Cada etapa convida você a sentir, escrever e escolher com presença.
             </p>
           </motion.div>
 
@@ -214,18 +213,18 @@ const Index = () => {
             {[
               {
                 step: "1",
-                title: "Concentre-se em sua questão",
-                description: "Pense na área da sua vida sobre a qual deseja orientação profunda"
+                title: "Preparar o coração",
+                description: "Respire, declare sua intenção e responda a perguntas breves sobre o que deseja transmutar."
               },
               {
                 step: "2",
-                title: "Escolha suas nove cartas",
-                description: "Confie em sua intuição para selecionar cada carta sequencialmente"
+                title: "Escolher com intuição",
+                description: "As cartas surgem na ordem do tempo. Toque na que chamar sua atenção — o portal se abre."
               },
               {
                 step: "3",
-                title: "Explore a análise completa",
-                description: "Descubra 9 perspectivas diferentes: eventos, emoções, influências, situações, sentimentos, ambiente, resultados, desafios e conselhos"
+                title: "Receber o insight",
+                description: "Ative a leitura canalizada pelo Gemini e receba orientações, perguntas e caminhos possíveis."
               }
             ].map((item, index) => (
               <motion.div
@@ -262,7 +261,7 @@ const Index = () => {
               size="lg"
               className="text-lg px-12 py-6 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
             >
-              Começar Agora ✨
+              Entrar no rito
             </Button>
           </motion.div>
         </div>
@@ -279,7 +278,7 @@ const Index = () => {
       <footer className="border-t border-border/50 backdrop-blur-sm bg-background/50">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center text-muted-foreground text-sm space-y-2">
-            <p>© 2024 Tarot Místico. Todos os direitos reservados.</p>
+            <p>© 2024 Tarot Insight. Caminhe com respeito, cuide da sua energia.</p>
             <p className="text-xs">
               Este site é apenas para fins de entretenimento. O tarot não substitui aconselhamento profissional.
             </p>
