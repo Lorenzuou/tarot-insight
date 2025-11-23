@@ -1,25 +1,96 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tarot Místico - Leitura Expandida de 9 Cartas Gratuita</title>
-    <meta name="description" content="Leitura profissional de tarot com 9 cartas. Método expandido 3x3 para análise completa do Passado, Presente e Futuro. Orientação espiritual detalhada gratuita." />
-    <meta name="author" content="Tarot Místico" />
-    <meta name="keywords" content="tarot, tarot online, leitura gratuita, tarot gratis, cartas de tarot, futuro, espiritualidade" />
-
-    <meta property="og:title" content="Tarot Místico - Leitura Expandida de 9 Cartas Gratuita" />
-    <meta property="og:description" content="Leitura profissional de tarot com 9 cartas. Análise completa e detalhada do passado, presente e futuro." />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-  </head>
-
+    <title>Mystic Oracle Tarot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              serif: ['Cinzel', 'serif'],
+              sans: ['Lato', 'sans-serif'],
+            },
+            colors: {
+              mystic: {
+                900: '#0f0c29', // Deep purple/black
+                800: '#302b63', // Deep purple
+                700: '#24243e', // Dark blueish
+                gold: '#ffd700',
+                accent: '#9d50bb'
+              }
+            },
+            animation: {
+              'float': 'float 6s ease-in-out infinite',
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'fade-in': 'fadeIn 1s ease-out forwards',
+            },
+            keyframes: {
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              },
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+        color: #e2e8f0;
+        min-height: 100vh;
+      }
+      .card-flip-inner {
+        transition: transform 0.8s;
+        transform-style: preserve-3d;
+      }
+      .card-flipped .card-flip-inner {
+        transform: rotateY(180deg);
+      }
+      .card-front, .card-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+      }
+      .card-front {
+        transform: rotateY(180deg);
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0f0c29;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #302b63;
+        border-radius: 4px;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>
