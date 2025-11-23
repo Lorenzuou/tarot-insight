@@ -39,5 +39,5 @@ ENV NODE_ENV=production
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3000', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
 
-# Start the application - listen on all interfaces
-CMD ["serve", "-s", "dist", "-l", "http://0.0.0.0:3000"]
+# Start the application
+CMD ["serve", "-s", "dist", "-l", "3000", "--host", "0.0.0.0"]
