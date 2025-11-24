@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Arcano, ReadingStage, ReadingMode, UserReadings, QuickReading, AIAnalysisResult } from './types';
 import { arcanosMaiores } from './data/tarotCards';
 import { interpretTarotReading, interpretQuickReading } from './services/geminiService';
-import AdSlot from './components/AdSlot';
 import Card from './components/Card';
 import Deck from './components/Deck';
 import QuickDeck from './components/QuickDeck';
@@ -329,8 +328,6 @@ const App: React.FC = () => {
               </div>
             )}
 
-            <AdSlot position="sidebar" hidden={isPremium} />
-
             {/* Main AI Interpretation */}
             <div className={`bg-indigo-950/80 backdrop-blur-md border rounded-lg p-8 md:p-12 relative overflow-hidden mt-8 shadow-2xl ${isPremium ? 'border-amber-400/40' : 'border-amber-500/30'}`}>
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-80 animate-pulse"></div>
@@ -426,11 +423,7 @@ const App: React.FC = () => {
       {renderHeader()}
       
       <main className="container mx-auto px-4 py-8 flex flex-col items-center">
-        <AdSlot position="header" hidden={isPremium} />
-        
         {renderContent()}
-        
-        {stage === ReadingStage.RESULT && <AdSlot position="footer" hidden={isPremium} />}
       </main>
 
       <footer className="text-center py-8 text-xs text-gray-600 mt-auto">
