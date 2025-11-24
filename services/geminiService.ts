@@ -1,10 +1,74 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { UserReadings, AIAnalysisResult } from '../types';
+import { UserReadings, QuickReading, AIAnalysisResult } from '../types';
 
 // Initialize the client
 // CRITICAL: API Key comes from environment variable
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+export const interpretQuickReading = async (reading: QuickReading): Promise<AIAnalysisResult> => {
+  try {
+    if (!process.env.API_KEY) {
+      console.warn("Gemini API Key missing. Returning mock interpretation.");
+      return {
+        summary: "Os astros estão nebulosos (Chave de API ausente).",
+        detailedAnalysis: "Não foi possível conectar com o oráculo digital.",
+        advice: "Tente novamente mais tarde.",
+      };
+    }
+
+    const modelId = 'gemini-2.5-flash';
+    const cardsNames = reading.cards.map(c => `${c.nome} (${c.significadoCurto})`).join(", ");
+
+    const prompt = `
+      Você é um leitor de Tarot místico, sábio e ASSERTIVO. O usuário fez uma pergunta e tirou 3 cartas.
+      
+      PERGUNTA DO USUÁRIO: "${reading.question}"
+      
+      CARTAS REVELADAS (em ordem): ${cardsNames}
+
+      INTERPRETAÇÃO DAS CARTAS:
+      - Carta 1 (${reading.cards[0].nome}): Representa a SITUAÇÃO ATUAL, o contexto presente da pergunta
+      - Carta 2 (${reading.cards[1].nome}): Representa o DESAFIO, obstáculo ou energia que influencia
+      - Carta 3 (${reading.cards[2].nome}): Representa o RESULTADO PROVÁVEL ou AÇÃO RECOMENDADA
+
+      TAREFA:
+      Seja DIRETO e ASSERTIVO na resposta. Não seja vago. Dê uma resposta clara sobre a pergunta.
+      Use linguagem mística mas seja específico sobre o que as cartas indicam como resposta.
+      
+      FORMATO DE RESPOSTA (JSON APENAS):
+      {
+        "summary": "Uma resposta DIRETA e mística à pergunta do usuário baseada nas 3 cartas (seja assertivo, não genérico).",
+        "detailedAnalysis": "Análise das 3 cartas: 1) Situação Atual (primeira carta e o que ela revela), 2) O Desafio (segunda carta e o que está em jogo), 3) Caminho/Resultado (terceira carta e o que fazer ou esperar). Use parágrafos separados para cada carta.",
+        "advice": "Um conselho PRÁTICO e específico baseado nas cartas. Seja claro sobre o que a pessoa deve fazer ou evitar.",
+        "loveAnalysis": "Se a pergunta envolve amor/relacionamento: análise específica focada no aspecto romântico com base nas cartas.",
+        "careerAnalysis": "Se a pergunta envolve trabalho/dinheiro: análise específica focada no aspecto profissional/financeiro com base nas cartas.",
+        "hiddenFactors": "Revele algo ESPECÍFICO que está oculto ou que a pessoa não percebeu, mas as cartas mostram claramente. Seja assertivo."
+      }
+    `;
+
+    const response = await ai.models.generateContent({
+      model: modelId,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response from Oracle");
+
+    return JSON.parse(text) as AIAnalysisResult;
+
+  } catch (error) {
+    console.error("Error fetching oracle wisdom:", error);
+    return {
+      summary: "As energias estão instáveis.",
+      detailedAnalysis: "Houve uma interferência na conexão espiritual.",
+      advice: "Medite sobre as cartas que você tirou.",
+    };
+  }
+};
 
 export const interpretTarotReading = async (reading: UserReadings): Promise<AIAnalysisResult> => {
   try {

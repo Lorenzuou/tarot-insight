@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Arcano, ReadingStage, UserReadings, AIAnalysisResult } from './types';
+import { Arcano, ReadingStage, ReadingMode, UserReadings, QuickReading, AIAnalysisResult } from './types';
 import { arcanosMaiores } from './data/tarotCards';
-import { interpretTarotReading } from './services/geminiService';
+import { interpretTarotReading, interpretQuickReading } from './services/geminiService';
 import AdSlot from './components/AdSlot';
 import Card from './components/Card';
 import Deck from './components/Deck';
+import QuickDeck from './components/QuickDeck';
 import QuestionForm from './components/QuestionForm';
 import PremiumModal from './components/PremiumModal';
 
@@ -20,13 +21,23 @@ const shuffleDeck = (array: Arcano[]) => {
 };
 
 const App: React.FC = () => {
-  const [stage, setStage] = useState<ReadingStage>(ReadingStage.INTRO);
+  const [stage, setStage] = useState<ReadingStage>(ReadingStage.MODE_SELECTION);
+  const [readingMode, setReadingMode] = useState<ReadingMode | null>(null);
   const [masterDeck, setMasterDeck] = useState<Arcano[]>([]); 
+  
+  // Complete reading
   const [reading, setReading] = useState<UserReadings>({
     pastInput: '', pastCards: [],
     presentInput: '', presentCards: [],
     futureInput: '', futureCards: [],
   });
+  
+  // Quick reading
+  const [quickReading, setQuickReading] = useState<QuickReading>({
+    question: '',
+    cards: [],
+  });
+  
   const [aiResult, setAiResult] = useState<AIAnalysisResult | null>(null);
   
   // Premium Logic
@@ -39,11 +50,28 @@ const App: React.FC = () => {
   }, []);
 
   // Handlers
-  const startReading = () => setStage(ReadingStage.INPUT_PAST);
+  const selectMode = (mode: ReadingMode) => {
+    setReadingMode(mode);
+    if (mode === ReadingMode.QUICK) {
+      setStage(ReadingStage.QUICK_INPUT);
+    } else {
+      setStage(ReadingStage.INPUT_PAST);
+    }
+  };
 
   const handleInput = (value: string, nextStage: ReadingStage, field: keyof UserReadings) => {
     setReading(prev => ({ ...prev, [field]: value }));
     setStage(nextStage);
+  };
+
+  const handleQuickInput = (value: string) => {
+    setQuickReading(prev => ({ ...prev, question: value }));
+    setStage(ReadingStage.QUICK_DRAW);
+  };
+
+  const handleQuickCardsSelected = (selectedCards: Arcano[]) => {
+    setQuickReading(prev => ({ ...prev, cards: selectedCards }));
+    setStage(ReadingStage.ANALYZING);
   };
 
   const handleCardsSelected = (selectedCards: Arcano[], nextStage: ReadingStage, field: 'pastCards' | 'presentCards' | 'futureCards') => {
@@ -62,13 +90,18 @@ const App: React.FC = () => {
   useEffect(() => {
     if (stage === ReadingStage.ANALYZING) {
       const fetchAnalysis = async () => {
-        const result = await interpretTarotReading(reading);
+        let result;
+        if (readingMode === ReadingMode.QUICK) {
+          result = await interpretQuickReading(quickReading);
+        } else {
+          result = await interpretTarotReading(reading);
+        }
         setAiResult(result);
         setStage(ReadingStage.RESULT);
       };
       fetchAnalysis();
     }
-  }, [stage, reading]);
+  }, [stage, reading, quickReading, readingMode]);
 
   // Render Helpers
   const renderHeader = () => (
@@ -86,27 +119,65 @@ const App: React.FC = () => {
   // Render Views based on Stage
   const renderContent = () => {
     switch (stage) {
-      case ReadingStage.INTRO:
+      case ReadingStage.MODE_SELECTION:
         return (
-          <div className="flex flex-col items-center text-center max-w-3xl animate-fade-in mt-10">
+          <div className="flex flex-col items-center text-center max-w-4xl animate-fade-in mt-10 gap-8">
             <h2 className="text-4xl md:text-6xl font-serif text-transparent bg-clip-text bg-gradient-to-b from-amber-100 to-amber-600 mb-6 drop-shadow-lg">
-              A Tiragem das 9 Cartas
+              Escolha Seu Caminho
             </h2>
-            <p className="text-lg md:text-xl text-blue-100/80 mb-12 font-sans leading-relaxed px-4">
-              Uma jornada profunda através do tempo. Selecionaremos 3 cartas para o Passado, 
-              3 para o Presente e 3 para o Futuro. Responda com sinceridade e deixe 
-              as imagens revelarem a verdade.
+            <p className="text-lg text-blue-100/80 mb-8 font-sans leading-relaxed px-4">
+              Duas formas de consultar o oráculo. Escolha a que ressoa com seu coração.
             </p>
-            <button 
-              onClick={startReading}
-              className="group relative px-12 py-4 bg-transparent border border-amber-500 text-amber-500 font-serif text-xl hover:bg-amber-500 hover:text-black transition-all duration-500 rounded-sm overflow-hidden"
-            >
-              <span className="relative z-10">INICIAR LEITURA</span>
-            </button>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full px-4">
+              {/* Quick Reading */}
+              <button
+                onClick={() => selectMode(ReadingMode.QUICK)}
+                className="group relative p-8 bg-gradient-to-br from-indigo-950/80 to-purple-950/80 border-2 border-amber-500/30 hover:border-amber-500 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(251,191,36,0.3)]"
+              >
+                <span className="text-5xl mb-4 block">🎴</span>
+                <h3 className="text-2xl font-serif text-amber-400 mb-3">Consulta Rápida</h3>
+                <p className="text-blue-100/70 text-sm mb-4">3 cartas para uma pergunta específica</p>
+                <ul className="text-left text-xs text-blue-100/60 space-y-2">
+                  <li>✦ Respostas diretas e objetivas</li>
+                  <li>✦ Ideal para decisões rápidas</li>
+                  <li>✦ ~5 minutos</li>
+                </ul>
+              </button>
+
+              {/* Complete Reading */}
+              <button
+                onClick={() => selectMode(ReadingMode.COMPLETE)}
+                className="group relative p-8 bg-gradient-to-br from-purple-950/80 to-indigo-950/80 border-2 border-amber-500/50 hover:border-amber-400 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(251,191,36,0.4)]"
+              >
+                <span className="text-5xl mb-4 block">🔮</span>
+                <h3 className="text-2xl font-serif text-amber-300 mb-3">Jornada Completa</h3>
+                <p className="text-blue-100/70 text-sm mb-4">9 cartas revelando passado, presente e futuro</p>
+                <ul className="text-left text-xs text-blue-100/60 space-y-2">
+                  <li>✦ Análise profunda e detalhada</li>
+                  <li>✦ Compreensão total da jornada</li>
+                  <li>✦ ~15 minutos</li>
+                </ul>
+              </button>
+            </div>
           </div>
         );
 
-      // PAST
+      // QUICK READING
+      case ReadingStage.QUICK_INPUT:
+        return <QuestionForm 
+          title="Sua Pergunta ao Oráculo" 
+          placeholder="Ex: Meu amor vai me procurar? Devo aceitar aquele emprego? O que preciso saber agora?" 
+          onSubmit={handleQuickInput} 
+        />;
+      
+      case ReadingStage.QUICK_DRAW:
+        return <QuickDeck 
+          availableCards={masterDeck} 
+          onSelectionComplete={handleQuickCardsSelected} 
+        />;
+
+      // COMPLETE READING - PAST
       case ReadingStage.INPUT_PAST:
         return <QuestionForm 
           title="O Passado" 
@@ -175,63 +246,88 @@ const App: React.FC = () => {
 
       // RESULT
       case ReadingStage.RESULT:
+        const isQuickMode = readingMode === ReadingMode.QUICK;
+        
         return (
           <div className="w-full max-w-6xl animate-fade-in pb-20 px-4">
             <h2 className="text-3xl md:text-5xl font-serif text-center text-amber-100 mb-12 border-b border-amber-500/30 pb-6">
-              Revelação Final
+              {isQuickMode ? 'Resposta do Oráculo' : 'Revelação Final'}
             </h2>
 
-            {/* 9 Card Grid Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-12">
-              {/* Column 1: Past */}
-              <div className="flex flex-col gap-6 bg-indigo-950/30 p-6 rounded-xl border border-amber-500/10">
-                <div className="text-center mb-4">
-                    <h3 className="font-serif text-amber-500 uppercase tracking-widest text-lg border-b border-amber-500/30 inline-block px-4 pb-1">O Passado</h3>
-                    <p className="text-blue-200/60 text-sm mt-2 italic">"{reading.pastInput}"</p>
+            {/* Quick Reading - 3 Cards Display */}
+            {isQuickMode && (
+              <div className="mb-12">
+                <div className="text-center mb-8">
+                  <p className="text-lg text-amber-200/80 italic mb-6">"{quickReading.question}"</p>
                 </div>
-                <div className="grid grid-cols-3 gap-2 justify-items-center">
-                    {reading.pastCards.map(c => (
-                        <div key={c.id} className="flex flex-col items-center">
-                             <Card card={c} isFlipped={true} disabled className="w-full" />
-                             <span className="text-[10px] text-center text-amber-100/70 mt-1">{c.nome}</span>
-                        </div>
-                    ))}
-                </div>
-              </div>
-
-              {/* Column 2: Present */}
-              <div className={`flex flex-col gap-6 bg-indigo-900/40 p-6 rounded-xl border shadow-lg transform scale-105 z-10 ${isPremium ? 'border-amber-400/60 shadow-amber-500/20' : 'border-amber-500/30 shadow-amber-500/10'}`}>
-                <div className="text-center mb-4">
-                    <h3 className="font-serif text-amber-400 uppercase tracking-widest text-xl font-bold border-b border-amber-400/50 inline-block px-4 pb-1">O Presente</h3>
-                    <p className="text-blue-200/60 text-sm mt-2 italic">"{reading.presentInput}"</p>
-                </div>
-                <div className="grid grid-cols-3 gap-2 justify-items-center">
-                    {reading.presentCards.map(c => (
-                        <div key={c.id} className="flex flex-col items-center">
-                             <Card card={c} isFlipped={true} disabled className="w-full" />
-                             <span className="text-[10px] text-center text-amber-100/70 mt-1">{c.nome}</span>
-                        </div>
-                    ))}
+                
+                <div className="flex gap-8 justify-center items-start flex-wrap">
+                  {quickReading.cards.map((card, idx) => {
+                    const labels = ['Situação Atual', 'Desafio', 'Resultado'];
+                    return (
+                      <div key={card.id} className="flex flex-col items-center gap-3">
+                        <p className="text-amber-400 text-sm font-serif tracking-wider uppercase">{labels[idx]}</p>
+                        <Card card={card} isFlipped={true} disabled className="w-28 h-44 md:w-32 md:h-52" />
+                        <span className="text-xs text-center text-amber-100/70 mt-1">{card.nome}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
+            )}
 
-              {/* Column 3: Future */}
-              <div className="flex flex-col gap-6 bg-indigo-950/30 p-6 rounded-xl border border-amber-500/10">
-                <div className="text-center mb-4">
-                    <h3 className="font-serif text-amber-500 uppercase tracking-widest text-lg border-b border-amber-500/30 inline-block px-4 pb-1">O Futuro</h3>
-                    <p className="text-blue-200/60 text-sm mt-2 italic">"{reading.futureInput}"</p>
+            {/* Complete Reading - 9 Card Grid Layout */}
+            {!isQuickMode && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-12">
+                {/* Column 1: Past */}
+                <div className="flex flex-col gap-6 bg-indigo-950/30 p-6 rounded-xl border border-amber-500/10">
+                  <div className="text-center mb-4">
+                      <h3 className="font-serif text-amber-500 uppercase tracking-widest text-lg border-b border-amber-500/30 inline-block px-4 pb-1">O Passado</h3>
+                      <p className="text-blue-200/60 text-sm mt-2 italic">"{reading.pastInput}"</p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 justify-items-center">
+                      {reading.pastCards.map(c => (
+                          <div key={c.id} className="flex flex-col items-center">
+                               <Card card={c} isFlipped={true} disabled className="w-full" />
+                               <span className="text-[10px] text-center text-amber-100/70 mt-1">{c.nome}</span>
+                          </div>
+                      ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2 justify-items-center">
-                    {reading.futureCards.map(c => (
-                        <div key={c.id} className="flex flex-col items-center">
-                             <Card card={c} isFlipped={true} disabled className="w-full" />
-                             <span className="text-[10px] text-center text-amber-100/70 mt-1">{c.nome}</span>
-                        </div>
-                    ))}
+
+                {/* Column 2: Present */}
+                <div className={`flex flex-col gap-6 bg-indigo-900/40 p-6 rounded-xl border shadow-lg transform scale-105 z-10 ${isPremium ? 'border-amber-400/60 shadow-amber-500/20' : 'border-amber-500/30 shadow-amber-500/10'}`}>
+                  <div className="text-center mb-4">
+                      <h3 className="font-serif text-amber-400 uppercase tracking-widest text-xl font-bold border-b border-amber-400/50 inline-block px-4 pb-1">O Presente</h3>
+                      <p className="text-blue-200/60 text-sm mt-2 italic">"{reading.presentInput}"</p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 justify-items-center">
+                      {reading.presentCards.map(c => (
+                          <div key={c.id} className="flex flex-col items-center">
+                               <Card card={c} isFlipped={true} disabled className="w-full" />
+                               <span className="text-[10px] text-center text-amber-100/70 mt-1">{c.nome}</span>
+                          </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Column 3: Future */}
+                <div className="flex flex-col gap-6 bg-indigo-950/30 p-6 rounded-xl border border-amber-500/10">
+                  <div className="text-center mb-4">
+                      <h3 className="font-serif text-amber-500 uppercase tracking-widest text-lg border-b border-amber-500/30 inline-block px-4 pb-1">O Futuro</h3>
+                      <p className="text-blue-200/60 text-sm mt-2 italic">"{reading.futureInput}"</p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 justify-items-center">
+                      {reading.futureCards.map(c => (
+                          <div key={c.id} className="flex flex-col items-center">
+                               <Card card={c} isFlipped={true} disabled className="w-full" />
+                               <span className="text-[10px] text-center text-amber-100/70 mt-1">{c.nome}</span>
+                          </div>
+                      ))}
+                  </div>
                 </div>
               </div>
-
-            </div>
+            )}
 
             <AdSlot position="sidebar" hidden={isPremium} />
 
