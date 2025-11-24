@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://tarom.com.br/sitemap.xml
