@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  name          String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  // Créditos
+  freeReadings  Int            @default(1) // 1 tiragem grátis ao se cadastrar
+  quickCredits  Int            @default(0) // Créditos para tiragens rápidas
+  fullCredits   Int            @default(0) // Créditos para tiragens completas
+  
+  readings      Reading[]
+  transactions  Transaction[]
+  
+  @@map("users")
+}
+
+model Reading {
+  id          String       @id @default(uuid())
+  userId      String
+  type        ReadingType
+  question    String?      // Para tiragens rápidas
+  cards       Json         // Array de cartas selecionadas
+  aiResult    Json         // Resultado da interpretação
+  createdAt   DateTime     @default(now())
+  
+  user        User         @relation(fields: [userId], references: [id])
+  
+  @@map("readings")
+  @@index([userId])
+}
+
+model Transaction {
+  id              String            @id @default(uuid())
+  userId          String
+  planType        PlanType
+  amount          Float
+  status          TransactionStatus @default(PENDING)
+  paymentId       String?           @unique // ID do Mercado Pago
+  paymentMethod   String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  user            User              @relation(fields: [userId], references: [id])
+  
+  @@map("transactions")
+  @@index([userId])
+  @@index([paymentId])
+}
+
+enum ReadingType {
+  FREE_FIRST
+  QUICK
+  FULL
+}
+
+enum PlanType {
+  BASIC      // R$ 7,00 - 3 rápidas + 1 completa
+  PREMIUM    // R$ 15,00 - 10 rápidas + 3 completas
+  UNLIMITED  // R$ 25,00 - Ilimitadas por 30 dias
+}
+
+enum TransactionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}

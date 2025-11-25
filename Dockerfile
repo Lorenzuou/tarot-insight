@@ -21,15 +21,20 @@ FROM nginx:alpine
 # Copy built application from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy both nginx configurations to temp location
+COPY nginx.dev.conf /tmp/nginx.dev.conf
+COPY nginx.prod.conf /tmp/nginx.prod.conf
 
-# Expose port
-EXPOSE 3000
+# Copy entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
-# Health check
+# Expose ports
+EXPOSE 80 443
+
+# Health check (will be overridden by docker-compose)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:3000 || exit 1
+    CMD wget --quiet --tries=1 --spider http://localhost:80 || exit 1
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start with custom entrypoint
+ENTRYPOINT ["/docker-entrypoint.sh"]

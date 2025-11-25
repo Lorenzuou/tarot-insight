@@ -8,6 +8,9 @@ import Deck from './components/Deck';
 import QuickDeck from './components/QuickDeck';
 import QuestionForm from './components/QuestionForm';
 import PremiumModal from './components/PremiumModal';
+import LoginModal from './components/LoginModal';
+import PricingModal from './components/PricingModal';
+import { useAuth } from './contexts/AuthContext';
 
 // Helper to shuffle array
 const shuffleDeck = (array: Arcano[]) => {
@@ -20,6 +23,9 @@ const shuffleDeck = (array: Arcano[]) => {
 };
 
 const App: React.FC = () => {
+  const { user, checkReadingAvailability, consumeReading, refreshUser } = useAuth();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
   const [stage, setStage] = useState<ReadingStage>(ReadingStage.MODE_SELECTION);
   const [readingMode, setReadingMode] = useState<ReadingMode | null>(null);
   const [masterDeck, setMasterDeck] = useState<Arcano[]>([]); 
@@ -49,7 +55,23 @@ const App: React.FC = () => {
   }, []);
 
   // Handlers
-  const selectMode = (mode: ReadingMode) => {
+  const selectMode = async (mode: ReadingMode) => {
+    // Check if user is authenticated
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    // Check reading availability
+    const type = mode === ReadingMode.QUICK ? 'QUICK' : 'COMPLETE';
+    const { available, message } = await checkReadingAvailability(type);
+
+    if (!available) {
+      alert(message || 'Você não tem créditos suficientes');
+      setShowPricingModal(true);
+      return;
+    }
+
     setReadingMode(mode);
     if (mode === ReadingMode.QUICK) {
       setStage(ReadingStage.QUICK_INPUT);
@@ -80,23 +102,32 @@ const App: React.FC = () => {
     setStage(nextStage);
   };
 
-  const handlePurchaseSuccess = () => {
-    setIsPremium(true);
-    setShowPremiumModal(false);
-  };
-
   // Final Analysis Trigger
   useEffect(() => {
     if (stage === ReadingStage.ANALYZING) {
       const fetchAnalysis = async () => {
-        let result;
-        if (readingMode === ReadingMode.QUICK) {
-          result = await interpretQuickReading(quickReading);
-        } else {
-          result = await interpretTarotReading(reading);
+        try {
+          // Consume reading credit
+          const type = readingMode === ReadingMode.QUICK ? 'QUICK' : 'COMPLETE';
+          await consumeReading(type);
+          
+          let result;
+          if (readingMode === ReadingMode.QUICK) {
+            result = await interpretQuickReading(quickReading);
+          } else {
+            result = await interpretTarotReading(reading);
+          }
+          setAiResult(result);
+          
+          // Refresh user credits
+          await refreshUser();
+          
+          setStage(ReadingStage.RESULT);
+        } catch (error) {
+          console.error('Erro ao processar leitura:', error);
+          alert('Erro ao processar leitura. Tente novamente.');
+          setStage(ReadingStage.MODE_SELECTION);
         }
-        setAiResult(result);
-        setStage(ReadingStage.RESULT);
       };
       fetchAnalysis();
     }
@@ -104,13 +135,39 @@ const App: React.FC = () => {
 
   // Render Helpers
   const renderHeader = () => (
-    <header className="w-full p-6 flex justify-center border-b border-white/10 bg-black/20 backdrop-blur-md sticky top-0 z-50">
+    <header className="w-full p-6 flex justify-between items-center border-b border-white/10 bg-black/20 backdrop-blur-md sticky top-0 z-50">
       <div className="flex items-center gap-3">
         <span className="text-3xl">🔮</span>
-        <h1 className={`text-2xl md:text-3xl font-serif font-bold tracking-wider ${isPremium ? 'text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300' : 'text-amber-100'}`}>
-          MYSTIC ORACLE {isPremium && <span className="text-xs align-top bg-amber-500 text-black px-1 rounded ml-1">PRO</span>}
+        <h1 className="text-2xl md:text-3xl font-serif font-bold tracking-wider text-amber-100">
+          MYSTIC ORACLE
         </h1>
         <span className="text-3xl">🔮</span>
+      </div>
+      
+      <div className="flex items-center gap-4">
+        {user ? (
+          <>
+            <div className="hidden md:flex flex-col items-end text-xs">
+              <span className="text-amber-200 font-medium">{user.name}</span>
+              <span className="text-amber-100/60">
+                {user.quickReadingsAvailable} rápidas | {user.completeReadingsAvailable} completas
+              </span>
+            </div>
+            <button
+              onClick={() => setShowPricingModal(true)}
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold rounded-lg transition-colors"
+            >
+              Comprar Créditos
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => setShowLoginModal(true)}
+            className="px-6 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold rounded-lg transition-all"
+          >
+            Entrar
+          </button>
+        )}
       </div>
     </header>
   );
@@ -414,10 +471,24 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] bg-fixed">
+      <LoginModal 
+        isOpen={showLoginModal} 
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={() => {
+          setShowLoginModal(false);
+          refreshUser();
+        }}
+      />
+
+      <PricingModal 
+        isOpen={showPricingModal} 
+        onClose={() => setShowPricingModal(false)}
+      />
+
       <PremiumModal 
         isOpen={showPremiumModal} 
         onClose={() => setShowPremiumModal(false)}
-        onPurchase={handlePurchaseSuccess}
+        onPurchase={() => setShowPricingModal(true)}
       />
 
       {renderHeader()}
