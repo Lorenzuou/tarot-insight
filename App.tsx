@@ -11,6 +11,7 @@ import PremiumModal from './components/PremiumModal';
 import LoginModal from './components/LoginModal';
 import PricingModal from './components/PricingModal';
 import { useAuth } from './contexts/AuthContext';
+import { authService } from './services/authService';
 
 // Helper to shuffle array
 const shuffleDeck = (array: Arcano[]) => {
@@ -23,7 +24,32 @@ const shuffleDeck = (array: Arcano[]) => {
 };
 
 const App: React.FC = () => {
-  const { user, checkReadingAvailability, consumeReading, refreshUser } = useAuth();
+  const { user, login, register, refreshCredits, logout: logoutUser } = useAuth();
+  const resetReadingState = () => {
+    setReading({
+      pastInput: '',
+      pastCards: [],
+      presentInput: '',
+      presentCards: [],
+      futureInput: '',
+      futureCards: [],
+    });
+    setQuickReading({ question: '', cards: [] });
+    setAiResult(null);
+    setMasterDeck(shuffleDeck(arcanosMaiores));
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    authService.logout();
+    resetReadingState();
+    setReadingMode(null);
+    setStage(ReadingStage.MODE_SELECTION);
+    setShowPricingModal(false);
+    setShowPremiumModal(false);
+    setShowLoginModal(false);
+  };
+
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [stage, setStage] = useState<ReadingStage>(ReadingStage.MODE_SELECTION);
@@ -64,11 +90,17 @@ const App: React.FC = () => {
 
     // Check reading availability
     const type = mode === ReadingMode.QUICK ? 'QUICK' : 'COMPLETE';
-    const { available, message } = await checkReadingAvailability(type);
+    try {
+      const { available, message } = await authService.checkReadingAvailability(type);
 
-    if (!available) {
-      alert(message || 'Você não tem créditos suficientes');
-      setShowPricingModal(true);
+      if (!available) {
+        alert(message || 'Você não tem créditos suficientes');
+        setShowPricingModal(true);
+        return;
+      }
+    } catch (error: any) {
+      console.error('Erro ao verificar créditos:', error);
+      alert(error?.message || 'Erro ao verificar seus créditos. Tente novamente.');
       return;
     }
 
@@ -104,34 +136,50 @@ const App: React.FC = () => {
 
   // Final Analysis Trigger
   useEffect(() => {
-    if (stage === ReadingStage.ANALYZING) {
-      const fetchAnalysis = async () => {
-        try {
-          // Consume reading credit
-          const type = readingMode === ReadingMode.QUICK ? 'QUICK' : 'COMPLETE';
-          await consumeReading(type);
-          
-          let result;
-          if (readingMode === ReadingMode.QUICK) {
-            result = await interpretQuickReading(quickReading);
-          } else {
-            result = await interpretTarotReading(reading);
-          }
-          setAiResult(result);
-          
-          // Refresh user credits
-          await refreshUser();
-          
-          setStage(ReadingStage.RESULT);
-        } catch (error) {
-          console.error('Erro ao processar leitura:', error);
-          alert('Erro ao processar leitura. Tente novamente.');
-          setStage(ReadingStage.MODE_SELECTION);
-        }
-      };
-      fetchAnalysis();
+    if (stage !== ReadingStage.ANALYZING || !readingMode) {
+      return;
     }
-  }, [stage, reading, quickReading, readingMode]);
+
+    const processReading = async () => {
+      try {
+        const isQuickMode = readingMode === ReadingMode.QUICK;
+        const type = isQuickMode ? 'QUICK' : 'COMPLETE';
+
+        const result = isQuickMode
+          ? await interpretQuickReading(quickReading)
+          : await interpretTarotReading(reading);
+
+        const questionPayload = isQuickMode
+          ? quickReading.question
+          : `Passado: ${reading.pastInput}\nPresente: ${reading.presentInput}\nFuturo: ${reading.futureInput}`;
+
+        const cardsPayload = isQuickMode
+          ? quickReading.cards
+          : {
+              past: reading.pastCards,
+              present: reading.presentCards,
+              future: reading.futureCards,
+            };
+
+        await authService.consumeReading({
+          type,
+          question: questionPayload,
+          cards: cardsPayload,
+          aiResult: result,
+        });
+
+        setAiResult(result);
+        await refreshCredits();
+        setStage(ReadingStage.RESULT);
+      } catch (error) {
+        console.error('Erro ao processar leitura:', error);
+        alert('Erro ao processar leitura. Tente novamente.');
+        setStage(ReadingStage.MODE_SELECTION);
+      }
+    };
+
+    processReading();
+  }, [stage, readingMode, quickReading, reading, refreshCredits]);
 
   // Render Helpers
   const renderHeader = () => (
@@ -150,7 +198,7 @@ const App: React.FC = () => {
             <div className="hidden md:flex flex-col items-end text-xs">
               <span className="text-amber-200 font-medium">{user.name}</span>
               <span className="text-amber-100/60">
-                {user.quickReadingsAvailable} rápidas | {user.completeReadingsAvailable} completas
+                {user.freeReadings} grátis | {user.quickCredits} rápidas | {user.fullCredits} completas
               </span>
             </div>
             <button
@@ -158,6 +206,12 @@ const App: React.FC = () => {
               className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold rounded-lg transition-colors"
             >
               Comprar Créditos
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-2 border border-amber-500/40 text-amber-200 text-xs font-semibold rounded-lg hover:bg-amber-500/10 transition-colors"
+            >
+              Sair
             </button>
           </>
         ) : (
@@ -471,12 +525,18 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] bg-fixed">
-      <LoginModal 
-        isOpen={showLoginModal} 
+      <LoginModal
+        isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
-        onSuccess={() => {
+        onLogin={async (email: string, password: string) => {
+          await login(email, password);
           setShowLoginModal(false);
-          refreshUser();
+          await refreshCredits();
+        }}
+        onRegister={async (email: string, password: string, name: string) => {
+          await register(email, password, name);
+          setShowLoginModal(false);
+          await refreshCredits();
         }}
       />
 

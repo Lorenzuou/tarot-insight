@@ -6,15 +6,28 @@ interface PricingModalProps {
   onClose: () => void;
 }
 
+type PlanType = 'BASIC' | 'PREMIUM' | 'UNLIMITED';
+
 const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
-  const API_URL = import.meta.env.VITE_API_URL || '/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
   if (!isOpen) return null;
 
-  const plans = [
+  const plans: Array<{
+    id: string;
+    planType: PlanType;
+    name: string;
+    price: number;
+    quickReadings: number;
+    completeReadings: number;
+    description: string;
+    popular?: boolean;
+    features: string[];
+  }> = [
     {
       id: 'basic',
+      planType: 'BASIC',
       name: 'Pacote Básico',
       price: 7.00,
       quickReadings: 3,
@@ -29,6 +42,7 @@ const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) => {
     },
     {
       id: 'premium',
+      planType: 'PREMIUM',
       name: 'Pacote Premium',
       price: 15.00,
       quickReadings: 10,
@@ -45,8 +59,9 @@ const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) => {
     },
     {
       id: 'unlimited',
+      planType: 'UNLIMITED',
       name: 'Pacote Ilimitado',
-      price: 30.00,
+      price: 25.00,
       quickReadings: 999,
       completeReadings: 10,
       description: 'Máximo poder místico',
@@ -60,17 +75,25 @@ const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) => {
     }
   ];
 
-  const handlePurchase = async (planId: string) => {
+  const handlePurchase = async (planType: PlanType) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Faça login para comprar créditos.');
+      }
       const response = await fetch(`${API_URL}/payments/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify({ planType }),
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error?.error || 'Erro ao criar pagamento');
+      }
 
       const data = await response.json();
       
@@ -96,7 +119,7 @@ const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) => {
           {user && (
             <div className="mt-4 inline-block bg-indigo-900/50 border border-amber-500/30 rounded-lg px-6 py-3">
               <p className="text-sm text-amber-200">
-                Créditos disponíveis: <span className="font-bold text-amber-400">{user.quickReadingsAvailable} rápidas</span> | <span className="font-bold text-amber-400">{user.completeReadingsAvailable} completas</span>
+                Créditos disponíveis: <span className="font-bold text-amber-400">{user.quickCredits} rápidas</span> | <span className="font-bold text-amber-400">{user.fullCredits} completas</span>
               </p>
             </div>
           )}
@@ -136,7 +159,7 @@ const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) => {
               </ul>
 
               <button
-                onClick={() => handlePurchase(plan.id)}
+                onClick={() => handlePurchase(plan.planType)}
                 className={`w-full py-3 rounded-lg font-bold transition-all duration-200 ${
                   plan.popular
                     ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white shadow-lg'
@@ -151,6 +174,15 @@ const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) => {
 
         <div className="text-center text-xs text-amber-100/40 mb-4">
           <p>Pagamento seguro via Mercado Pago • Ativação instantânea</p>
+        </div>
+
+        <div className="text-center">
+          <button
+            onClick={onClose}
+            className="bg-indigo-900/50 hover:bg-indigo-800 text-amber-200 border border-amber-500/30 px-6 py-2 rounded-lg font-medium transition-all duration-200"
+          >
+            ← Voltar ao Menu
+          </button>
         </div>
 
         <button

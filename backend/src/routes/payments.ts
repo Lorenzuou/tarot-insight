@@ -28,11 +28,11 @@ const PLANS = {
     fullCredits: 3,
   },
   UNLIMITED: {
-    title: 'Plano Ilimitado',
-    description: 'Tiragens ilimitadas por 30 dias',
+    title: 'Plano Super',
+    description: '50 tiragens rápidas + 20 tiragens completas',
     price: 25.00,
-    quickCredits: 999,
-    fullCredits: 999,
+    quickCredits: 50,
+    fullCredits: 20,
   },
 };
 
@@ -62,6 +62,8 @@ router.post('/create', authenticate, async (req: AuthRequest, res) => {
       },
     });
 
+    console.log(process.env.FRONTEND_URL)
+
     // Criar preferência no Mercado Pago
     const preference = new Preference(client);
     const result = await preference.create({
@@ -76,10 +78,11 @@ router.post('/create', authenticate, async (req: AuthRequest, res) => {
             currency_id: 'BRL',
           },
         ],
+        external_reference: transaction.id, // Importante para reconciliação
         back_urls: {
-          success: `${process.env.FRONTEND_URL}/payment/success`,
-          failure: `${process.env.FRONTEND_URL}/payment/failure`,
-          pending: `${process.env.FRONTEND_URL}/payment/pending`,
+          success: `${process.env.FRONTEND_URL || 'http://localhost:8080'}/payment/success`,
+          failure: `${process.env.FRONTEND_URL || 'http://localhost:8080'}/payment/failure`,
+          pending: `${process.env.FRONTEND_URL || 'http://localhost:8080'}/payment/pending`,
         },
         auto_return: 'approved',
         notification_url: `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/payments/webhook`,
@@ -190,6 +193,130 @@ router.get('/status/:transactionId', authenticate, async (req: AuthRequest, res)
   } catch (error) {
     console.error('Erro ao buscar transação:', error);
     res.status(500).json({ error: 'Erro ao buscar transação' });
+  }
+});
+
+// Listar transações do usuário
+router.get('/transactions', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const transactions = await prisma.transaction.findMany({
+      where: { userId: req.userId },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    res.json(transactions);
+  } catch (error) {
+    console.error('Erro ao listar transações:', error);
+    res.status(500).json({ error: 'Erro ao listar transações' });
+  }
+});
+
+// Reconciliar pagamentos pendentes diretamente no Mercado Pago
+router.post('/reconcile', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const pendingTransactions = await prisma.transaction.findMany({
+      where: {
+        userId: req.userId,
+        status: 'PENDING',
+      },
+      take: 10,
+    });
+
+    if (!pendingTransactions.length) {
+      return res.json({ updated: 0, message: 'Nenhuma transação pendente' });
+    }
+
+    const paymentClient = new Payment(client);
+    let updatedCount = 0;
+
+    for (const transaction of pendingTransactions) {
+      let paymentResult = null;
+
+      // Tentar buscar por external_reference primeiro
+      try {
+        const paymentsSearch = await paymentClient.search({
+          options: {
+            limit: 5,
+            sort: 'date_created',
+            criteria: 'desc',
+            external_reference: transaction.id,
+          },
+        });
+        paymentResult = paymentsSearch.results?.[0];
+      } catch (searchError) {
+        console.log('Busca por external_reference falhou:', searchError);
+      }
+
+      // Se não encontrou, buscar pagamentos recentes aprovados
+      if (!paymentResult) {
+        try {
+          // Buscar pagamentos recentes (últimos 30 dias)
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          
+          const recentPayments = await paymentClient.search({
+            options: {
+              limit: 20,
+              sort: 'date_created',
+              criteria: 'desc',
+              begin_date: thirtyDaysAgo.toISOString(),
+              end_date: new Date().toISOString(),
+            },
+          });
+
+          // Procurar por pagamento com metadata correspondente
+          paymentResult = recentPayments.results?.find((p: any) => {
+            const metadata = p.metadata || {};
+            return (
+              metadata.transaction_id === transaction.id ||
+              (p.additional_info?.items?.[0]?.id === transaction.id)
+            );
+          });
+        } catch (recentSearchError) {
+          console.log('Busca por pagamentos recentes falhou:', recentSearchError);
+        }
+      }
+
+      if (!paymentResult) {
+        continue;
+      }
+
+      const paymentStatus = paymentResult.status;
+      if (paymentStatus === 'approved') {
+        const plan = PLANS[transaction.planType];
+        await prisma.$transaction([
+          prisma.transaction.update({
+            where: { id: transaction.id },
+            data: {
+              status: 'APPROVED',
+              paymentId: paymentResult.id?.toString(),
+              paymentMethod: paymentResult.payment_method_id || '',
+            },
+          }),
+          prisma.user.update({
+            where: { id: transaction.userId },
+            data: {
+              quickCredits: { increment: plan.quickCredits },
+              fullCredits: { increment: plan.fullCredits },
+            },
+          }),
+        ]);
+        updatedCount++;
+        console.log(`✅ Pagamento reconciliado: ${transaction.id}`);
+      } else if (paymentStatus === 'rejected' || paymentStatus === 'cancelled') {
+        await prisma.transaction.update({
+          where: { id: transaction.id },
+          data: { status: paymentStatus.toUpperCase() as any },
+        });
+        updatedCount++;
+      }
+    }
+
+    res.json({ updated: updatedCount });
+  } catch (error) {
+    console.error('Erro ao reconciliar pagamentos:', error);
+    res.status(500).json({ error: 'Erro ao reconciliar pagamentos' });
   }
 });
 

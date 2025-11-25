@@ -35,8 +35,8 @@ services:
       - MERCADOPAGO_ACCESS_TOKEN=${MERCADOPAGO_ACCESS_TOKEN}
       - PORT=3001
       - NODE_ENV=production
-      - FRONTEND_URL=https://tarom.com.br
-      - BACKEND_URL=https://api.tarom.com.br
+      - FRONTEND_URL=${FRONTEND_URL}
+      - BACKEND_URL=http://localhost:3001
     ports:
       - "3001:3001"
     depends_on:
@@ -53,8 +53,10 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: tarot-insight-app
-    ports:
-      - "127.0.0.1:8080:80"
+    # On Linux, use host networking in development to avoid docker-proxy/iptables issues
+    # This makes the container listen on the host network directly (ports from container are host ports).
+    # NOTE: network_mode: host only works on Linux and will bind ports directly on the host.
+    network_mode: host
     environment:
       - VITE_API_URL=http://localhost:8080/api
       - GEMINI_API_KEY=${GEMINI_API_KEY}
@@ -63,8 +65,6 @@ services:
       backend:
         condition: service_started
     restart: unless-stopped
-    networks:
-      - tarot-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
       interval: 30s
