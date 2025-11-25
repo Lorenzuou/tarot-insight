@@ -50,6 +50,15 @@ const App: React.FC = () => {
     setShowLoginModal(false);
   };
 
+  const handleGoToMainMenu = () => {
+    resetReadingState();
+    setReadingMode(null);
+    setStage(ReadingStage.MODE_SELECTION);
+    setShowPricingModal(false);
+    setShowPremiumModal(false);
+    setShowLoginModal(false);
+  };
+
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [stage, setStage] = useState<ReadingStage>(ReadingStage.MODE_SELECTION);
@@ -186,7 +195,10 @@ const App: React.FC = () => {
     <header className="w-full p-6 flex justify-between items-center border-b border-white/10 bg-black/20 backdrop-blur-md sticky top-0 z-50">
       <div className="flex items-center gap-3">
         <span className="text-3xl">🔮</span>
-        <h1 className="text-2xl md:text-3xl font-serif font-bold tracking-wider text-amber-100">
+        <h1
+          className="text-2xl md:text-3xl font-serif font-bold tracking-wider text-amber-100 cursor-pointer hover:text-amber-300 transition-colors"
+          onClick={handleGoToMainMenu}
+        >
           MYSTIC ORACLE
         </h1>
         <span className="text-3xl">🔮</span>
