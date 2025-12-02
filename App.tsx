@@ -10,8 +10,7 @@ import QuestionForm from './components/QuestionForm';
 import PremiumModal from './components/PremiumModal';
 import LoginModal from './components/LoginModal';
 import PricingModal from './components/PricingModal';
-import { useAuth } from './contexts/AuthContext';
-import { authService } from './services/authService';
+import VerifyEmail from './components/VerifyEmail';
 
 // Helper to shuffle array
 const shuffleDeck = (array: Arcano[]) => {
@@ -80,14 +79,21 @@ const App: React.FC = () => {
   
   const [aiResult, setAiResult] = useState<AIAnalysisResult | null>(null);
   
-  // Premium Logic
-  const [isPremium, setIsPremium] = useState(false);
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
 
   // Initialize Deck
   useEffect(() => {
     setMasterDeck(shuffleDeck(arcanosMaiores));
   }, []);
+
+  // Verificar email após login
+  useEffect(() => {
+    if (user && !user.emailVerified) {
+      setShowEmailVerificationModal(true);
+    } else {
+      setShowEmailVerificationModal(false);
+    }
+  }, [user]);
 
   // Handlers
   const selectMode = async (mode: ReadingMode) => {
@@ -537,6 +543,11 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] bg-fixed">
+      {/* Verificar se é página de verificação de email */}
+      {window.location.search.includes('token=') ? (
+        <VerifyEmail />
+      ) : (
+        <>
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
@@ -563,6 +574,40 @@ const App: React.FC = () => {
         onPurchase={() => setShowPricingModal(true)}
       />
 
+      {/* Email Verification Modal */}
+      {showEmailVerificationModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-indigo-950/90 border border-amber-500/30 rounded-xl p-6 max-w-md w-full text-center">
+            <h3 className="text-xl font-serif text-amber-300 mb-4">Verifique seu Email</h3>
+            <p className="text-blue-100/80 mb-6">
+              Enviamos um link de verificação para <strong>{user?.email}</strong>. 
+              Por favor, verifique sua caixa de entrada e clique no link para ativar sua conta.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setShowEmailVerificationModal(false)}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition-colors"
+              >
+                Ok, entendi
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await authService.resendVerification(user!.email);
+                    alert('Email de verificação reenviado!');
+                  } catch (error) {
+                    alert('Erro ao reenviar email. Tente novamente.');
+                  }
+                }}
+                className="px-4 py-2 border border-amber-500/40 text-amber-200 hover:bg-amber-500/10 rounded-lg transition-colors"
+              >
+                Reenviar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {renderHeader()}
       
       <main className="container mx-auto px-4 py-8 flex flex-col items-center">
@@ -572,6 +617,7 @@ const App: React.FC = () => {
       <footer className="text-center py-8 text-xs text-gray-600 mt-auto">
         <p>&copy; {new Date().getFullYear()} Mystic Oracle Tarot. Para fins de entretenimento.</p>
       </footer>
+      )}
     </div>
   );
 };

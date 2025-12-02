@@ -4,6 +4,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  emailVerified: boolean;
   freeReadings: number;
   quickCredits: number;
   fullCredits: number;
@@ -158,6 +159,32 @@ class AuthService {
 
     if (!response.ok) {
       throw new Error('Erro ao buscar usuário');
+    }
+
+    return response.json();
+  }
+
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    const response = await fetch(`${API_URL}/auth/verify-email?token=${token}`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Erro ao verificar email');
+    }
+
+    return response.json();
+  }
+
+  async resendVerification(email: string): Promise<{ message: string }> {
+    const response = await fetch(`${API_URL}/auth/resend-verification`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Erro ao reenviar email');
     }
 
     return response.json();

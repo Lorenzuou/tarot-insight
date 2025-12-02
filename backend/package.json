@@ -11,18 +11,26 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
   },
-  "keywords": ["tarot", "api", "authentication", "payments"],
+  "keywords": [
+    "tarot",
+    "api",
+    "authentication",
+    "payments"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@types/nodemailer": "^7.0.4",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-validator": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
-    "mercadopago": "^2.0.15"
+    "mercadopago": "^2.0.15",
+    "nodemailer": "^7.0.11",
+    "resend": "^6.5.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
